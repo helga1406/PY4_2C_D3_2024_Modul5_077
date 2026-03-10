@@ -66,9 +66,8 @@ class MongoService {
     }
   }
 
-  // --- CRUD OPERASI DENGAN LOGHELPER ---
-
-  Future<List<LogModel>> getLogs(String teamId) async {
+// --- CRUD OPERASI DENGAN LOGHELPER ---
+Future<List<LogModel>> getLogs(String teamId) async {
     try {
       final collection = await _getSafeCollection();
       
@@ -89,7 +88,7 @@ class MongoService {
         source: _source,
         level: 1,
       );
-      return []; 
+      rethrow; 
     }
   }
 
@@ -98,7 +97,7 @@ class MongoService {
       final collection = await _getSafeCollection();
       
       final logObjectId = ObjectId.fromHexString(logData.id!);
-      
+
       await collection.updateOne(
         where.id(logObjectId),
         modify
