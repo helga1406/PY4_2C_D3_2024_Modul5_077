@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 158, 101, 140)),
-        useMaterial3: true, // Tambahkan ini agar tampilan lebih modern (Material 3)
+        useMaterial3: true,
       ),
       home: const OnboardingView(),
     );
