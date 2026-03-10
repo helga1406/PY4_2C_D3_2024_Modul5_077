@@ -68,7 +68,7 @@ class LogController {
     selectedFilter.value = category;
   }
 
-  // --- FUNGSI LOAD LOGS  ---
+  // --- FUNGSI LOAD LOGS ---
   Future<void> loadLogs(String teamId) async {
     logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
 
@@ -77,7 +77,11 @@ class LogController {
       final cloudData = await MongoService().getLogs(teamId);
       for (var item in cloudData) {
         if (item.id != null) {
-          if (item.authorId.trim().toLowerCase() == username.trim().toLowerCase()) {
+          // 👇 PERBAIKAN: Memeriksa kepemilikan ATAU status Public 👇
+          bool isMyOwn = item.authorId.trim().toLowerCase() == username.trim().toLowerCase();
+          bool isPublic = (item.isPublic ?? false) == true;
+
+          if (isMyOwn || isPublic) {
             await _myBox.put(item.id, item);
           } else {
             if (_myBox.containsKey(item.id)) {
@@ -188,5 +192,9 @@ class LogController {
         await LogHelper.writeLog("WARNING: Gagal hapus di Cloud", level: 1);
       }
     }
+  }
+
+  Future<void> clearLocalData() async {
+    await _myBox.clear();
   }
 }

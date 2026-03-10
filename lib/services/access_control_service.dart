@@ -11,9 +11,9 @@ class AccessControlService {
 
   // Daftar izin dasar per Role 
   static final Map<String, List<String>> _rolePermissions = {
-    'Ketua': [actionCreate, actionRead, actionUpdate, actionDelete],
+    'Ketua': [actionCreate, actionRead],
     'Anggota': [actionCreate, actionRead],
-    'Asisten': [actionRead, actionUpdate],
+    'Asisten': [actionCreate, actionRead],
   };
 
   static bool canPerform(String role, String action, {bool isOwner = false}) {

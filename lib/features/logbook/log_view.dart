@@ -79,8 +79,12 @@ class _LogViewState extends State<LogView> {
             onPressed: () => _confirmAction(
               title: "Konfirmasi Logout",
               content: "Apakah Anda yakin ingin keluar?",
-              onConfirm: () =>
-                  Navigator.of(context).pushReplacementNamed('/'),
+              onConfirm: () async {
+                await _controller.clearLocalData(); 
+                
+                if (!context.mounted) return;
+                Navigator.of(context).pushReplacementNamed('/');
+              },
             ),
           ),
         ],
@@ -368,7 +372,7 @@ class _LogViewState extends State<LogView> {
         itemBuilder: (context, index) {
           final log = filtered[index];
 
-          final bool isOwner = log.authorId == widget.username;
+          final bool isOwner = log.authorId.trim().toLowerCase() == widget.username.trim().toLowerCase();
 
           final bool canDelete = AccessControlService.canPerform(
             currentUserRole,
