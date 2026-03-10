@@ -9,6 +9,7 @@ class AccessControlService {
   static const String actionUpdate = 'update';
   static const String actionDelete = 'delete';
 
+  // Daftar izin dasar per Role 
   static final Map<String, List<String>> _rolePermissions = {
     'Ketua': [actionCreate, actionRead, actionUpdate, actionDelete],
     'Anggota': [actionCreate, actionRead],
@@ -16,14 +17,10 @@ class AccessControlService {
   };
 
   static bool canPerform(String role, String action, {bool isOwner = false}) {
-    final permissions = _rolePermissions[role] ?? [];
-    bool hasBasicPermission = permissions.contains(action);
-
-    if (role == 'Anggota' &&
-        (action == actionUpdate || action == actionDelete)) {
-      return isOwner;
+    if (isOwner && (action == actionUpdate || action == actionDelete)) {
+      return true;
     }
-
-    return hasBasicPermission;
+    final permissions = _rolePermissions[role] ?? [];
+    return permissions.contains(action);
   }
 }

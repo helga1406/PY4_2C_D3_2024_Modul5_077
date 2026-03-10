@@ -33,32 +33,28 @@ class LogController {
     });
   }
 
-  // --- LOGIKA TASK 5: FILTER PRIVASI ---
+  // --- LOGIKA TASK 5: FILTER PRIVASI (SUPER KETAT) ---
   List<LogModel> _applyPrivacyFilter(List<LogModel> allLogs) {
     return allLogs.where((log) {
-      bool isMyOwnLog = log.authorId == username;
-      bool isPublicLog = log.isPublic == true;
+      bool isMyOwnLog = log.authorId.trim().toLowerCase() == username.trim().toLowerCase();
+      bool isPublicLog = (log.isPublic ?? false) == true;
+      
       return isMyOwnLog || isPublicLog;
     }).toList();
   }
 
   // --- SINKRONISASI DATA ---
   Future<void> _syncPendingData() async {
-    await LogHelper.writeLog(
-      "INTERNET AKTIF: Memulai sinkronisasi...",
-      level: 2,
-    );
+    await LogHelper.writeLog("INTERNET AKTIF: Memulai sinkronisasi...", level: 2);
 
     final localLogs = _myBox.values.toList();
-
     for (var log in localLogs) {
       try {
-        await MongoService().insertLog(log, username);
+        if (log.authorId.trim().toLowerCase() == username.trim().toLowerCase()) {
+          await MongoService().insertLog(log, username);
+        }
       } catch (e) {
-        await LogHelper.writeLog(
-          "ERROR: Sinkronisasi gagal untuk log ${log.id}",
-          level: 1,
-        );
+        await LogHelper.writeLog("ERROR: Sinkronisasi gagal log ${log.id}", level: 1);
       }
     }
   }
@@ -72,35 +68,31 @@ class LogController {
     selectedFilter.value = category;
   }
 
-  // --- FUNGSI LOAD LOGS ---
+  // --- FUNGSI LOAD LOGS  ---
   Future<void> loadLogs(String teamId) async {
-    final localData = _applyPrivacyFilter(
-      _myBox.values.toList(),
-    );
-    logsNotifier.value = localData;
+    logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
 
     try {
+      // 2. Ambil data dari MongoDB (Cloud)
       final cloudData = await MongoService().getLogs(teamId);
+      for (var item in cloudData) {
+        if (item.id != null) {
+          if (item.authorId.trim().toLowerCase() == username.trim().toLowerCase()) {
+            await _myBox.put(item.id, item);
+          } else {
+            if (_myBox.containsKey(item.id)) {
+              await _myBox.delete(item.id); 
+            }
+          }
+        }
+      }
 
-      Map<String, LogModel> dataMap = {
-        for (var item in cloudData) item.id!: item,
-      };
+      // 4. Update layar 
+      logsNotifier.value = _applyPrivacyFilter(cloudData);
 
-      await _myBox.putAll(dataMap);
-
-      logsNotifier.value = _applyPrivacyFilter(
-        _myBox.values.toList(),
-      );
-
-      await LogHelper.writeLog(
-        "SYNC: Data sinkron dengan Cloud",
-        level: 2,
-      );
+      await LogHelper.writeLog("SYNC: Data sinkron dengan Cloud", level: 2);
     } catch (e) {
-      await LogHelper.writeLog(
-        "OFFLINE: Menampilkan data cache",
-        level: 2,
-      );
+      await LogHelper.writeLog("OFFLINE: Menampilkan data cache", level: 2);
     }
   }
 
@@ -115,11 +107,7 @@ class LogController {
       userRole,
       AccessControlService.actionCreate,
     )) {
-      await LogHelper.writeLog(
-        "SECURITY BREACH: Unauthorized create attempt",
-        source: "LogController",
-        level: 1,
-      );
+      await LogHelper.writeLog("SECURITY BREACH: Unauthorized create", level: 1);
       return;
     }
 
@@ -130,97 +118,74 @@ class LogController {
       title: title,
       description: desc,
       date: formattedTime,
-      authorId: username,
+      authorId: username.trim().toLowerCase(), 
       teamId: 'team_01',
       category: category,
       isPublic: isPublic,
     );
 
+    // Simpan ke HP
     await _myBox.put(newLog.id, newLog);
-    
-    logsNotifier.value = _applyPrivacyFilter(
-      _myBox.values.toList(),
-    );
+    logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
 
     try {
+      // Simpan ke Cloud
       await MongoService().insertLog(newLog, username);
-      await LogHelper.writeLog(
-        "SUCCESS: Data Cloud Updated",
-        source: "log_controller.dart",
-      );
+      await LogHelper.writeLog("SUCCESS: Data Cloud Updated", source: "log_controller.dart");
     } catch (e) {
-      await LogHelper.writeLog(
-        "WARNING: Data tersimpan lokal",
-        level: 1,
-      );
+      await LogHelper.writeLog("WARNING: Data tersimpan lokal", level: 1);
     }
   }
 
-  // --- FUNGSI UPDATE LOG ---
+  // --- FUNGSI UPDATE LOG (PENGAMANAN GANDA) ---
   Future<void> updateLog(LogModel updatedLog) async {
-    bool isOwner = updatedLog.authorId == username;
+    final originalLog = _myBox.get(updatedLog.id);
+  
+    bool isOwner = (originalLog?.authorId.trim().toLowerCase() ?? 
+                    updatedLog.authorId.trim().toLowerCase()) == 
+                    username.trim().toLowerCase();
 
     if (!AccessControlService.canPerform(
       userRole,
       AccessControlService.actionUpdate,
       isOwner: isOwner,
     )) {
-      await LogHelper.writeLog(
-        "SECURITY BREACH: Unauthorized update attempt",
-        source: "LogController",
-        level: 1,
-      );
-      return;
+      await LogHelper.writeLog("SECURITY BREACH: Unauthorized update", level: 1);
+      return; 
     }
-
     await _myBox.put(updatedLog.id, updatedLog);
-    
-    logsNotifier.value = _applyPrivacyFilter(
-      _myBox.values.toList(),
-    );
+    logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
 
     try {
+      // Simpan ke Cloud
       await MongoService().updateLog(updatedLog, username);
     } catch (e) {
-      await LogHelper.writeLog(
-        "WARNING: Update tersimpan lokal",
-        level: 1,
-      );
+      await LogHelper.writeLog("WARNING: Update tersimpan lokal", level: 1);
     }
   }
 
   // --- FUNGSI REMOVE LOG ---
   Future<void> removeLog(LogModel log) async {
-    bool isOwner = log.authorId == username;
+    bool isOwner = log.authorId.trim().toLowerCase() == username.trim().toLowerCase();
 
     if (!AccessControlService.canPerform(
       userRole,
       AccessControlService.actionDelete,
       isOwner: isOwner,
     )) {
-      await LogHelper.writeLog(
-        "SECURITY BREACH: Unauthorized delete attempt",
-        source: "LogController",
-        level: 1,
-      );
+      await LogHelper.writeLog("SECURITY BREACH: Unauthorized delete", level: 1);
       return;
     }
 
     if (log.id != null) {
       await _myBox.delete(log.id);
-      
-      logsNotifier.value = _applyPrivacyFilter(
-        _myBox.values.toList(),
-      );
+      logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
 
       try {
         final objectId = mongo.ObjectId.fromHexString(log.id!);
         await MongoService().deleteLog(objectId, username);
       } catch (e) {
-        await LogHelper.writeLog(
-          "WARNING: Gagal hapus di Cloud",
-          level: 1,
-        );
+        await LogHelper.writeLog("WARNING: Gagal hapus di Cloud", level: 1);
       }
     }
   }

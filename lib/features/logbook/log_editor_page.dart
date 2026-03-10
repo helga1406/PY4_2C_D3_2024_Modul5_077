@@ -26,7 +26,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
 
   bool _isPublic = false; 
 
-  @override
+@override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.log?.title ?? '');
@@ -34,8 +34,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
     
     if (widget.log != null) {
       _selectedCategory = widget.log!.category;
-      // Mengambil status public dari log yang sudah ada
-      _isPublic = widget.log!.isPublic; 
+      _isPublic = widget.log?.isPublic ?? false; 
     }
 
     _descController.addListener(() {
@@ -56,8 +55,6 @@ class _LogEditorPageState extends State<LogEditorPage> {
 
     try {
       if (widget.log == null) {
-        // --- TASK 5: Kirim isPublic ke Controller ---
-        // Pastikan di LogController.addLog sudah ditambah parameter {bool isPublic = false}
         await widget.controller.addLog(
           _titleController.text,
           _descController.text,
@@ -68,7 +65,6 @@ class _LogEditorPageState extends State<LogEditorPage> {
           _showSuccessSnackBar('Catatan baru berhasil disimpan! ☁️');
         }
       } else {
-        // --- TASK 5: Update data dengan status isPublic terbaru ---
         final updatedLog = LogModel(
           id: widget.log!.id,
           title: _titleController.text,

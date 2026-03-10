@@ -98,8 +98,7 @@ class MongoService {
       final collection = await _getSafeCollection();
       
       final logObjectId = ObjectId.fromHexString(logData.id!);
-
-      // Update if exists, Insert if not
+      
       await collection.updateOne(
         where.id(logObjectId),
         modify
@@ -108,8 +107,9 @@ class MongoService {
             .set('category', logData.category)
             .set('date', logData.date)
             .set('authorId', logData.authorId)
-            .set('teamId', logData.teamId),
-        upsert: true, // <-- INI SOLUSI TROUBLESHOOTING-NYA
+            .set('teamId', logData.teamId)
+            .set('isPublic', logData.isPublic ?? false),
+        upsert: true, 
       );
 
       await LogHelper.writeLog(
@@ -133,15 +133,15 @@ class MongoService {
       if (updatedLog.id == null) throw "ID Log tidak ditemukan untuk update";
 
       final logObjectId = ObjectId.fromHexString(updatedLog.id!);
-
       await collection.updateOne(
-        where.id(logObjectId).and(where.eq('authorId', username)), 
+        where.id(logObjectId), 
         modify
             .set('title', updatedLog.title)
             .set('description', updatedLog.description)
             .set('category', updatedLog.category)
             .set('date', updatedLog.date) 
-            .set('teamId', updatedLog.teamId), 
+            .set('teamId', updatedLog.teamId)
+            .set('isPublic', updatedLog.isPublic ?? false), 
       );
 
       await LogHelper.writeLog(
@@ -163,7 +163,7 @@ class MongoService {
     try {
       final collection = await _getSafeCollection();
       await collection.remove(
-        where.id(logId).and(where.eq('authorId', username)) 
+        where.id(logId) 
       );
 
       await LogHelper.writeLog(

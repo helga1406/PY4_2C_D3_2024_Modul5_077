@@ -11,6 +11,7 @@ void main() async {
 
   Hive.registerAdapter(LogModelAdapter()); 
 
+  await Hive.deleteBoxFromDisk('offline_logs'); 
   await Hive.openBox<LogModel>('offline_logs');
 
   await initializeDateFormatting('id_ID', null);

@@ -27,10 +27,10 @@ class LogModel extends HiveObject {
   final String category;
 
   @HiveField(7)
-  final bool isPublic;
+  final bool? isPublic; 
 
   LogModel({
-    this.id,
+    required this.id,
     required this.title,
     required this.description,
     required this.date,
