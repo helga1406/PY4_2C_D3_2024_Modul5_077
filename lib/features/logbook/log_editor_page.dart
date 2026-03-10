@@ -24,6 +24,8 @@ class _LogEditorPageState extends State<LogEditorPage> {
   String _selectedCategory = "Pribadi";
   final List<String> _categories = ["Pribadi", "Pekerjaan", "Urgent"];
 
+  bool _isPublic = false; 
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +34,8 @@ class _LogEditorPageState extends State<LogEditorPage> {
     
     if (widget.log != null) {
       _selectedCategory = widget.log!.category;
+      // Mengambil status public dari log yang sudah ada
+      _isPublic = widget.log!.isPublic; 
     }
 
     _descController.addListener(() {
@@ -40,27 +44,31 @@ class _LogEditorPageState extends State<LogEditorPage> {
   }
 
   void _save() async {
-    // Validasi Judul Kosong
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Judul tidak boleh kosong!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.redAccent)
+        const SnackBar(
+          content: Text('Judul tidak boleh kosong!', style: TextStyle(color: Colors.white)), 
+          backgroundColor: Colors.redAccent
+        )
       );
       return;
     }
 
     try {
       if (widget.log == null) {
+        // --- TASK 5: Kirim isPublic ke Controller ---
+        // Pastikan di LogController.addLog sudah ditambah parameter {bool isPublic = false}
         await widget.controller.addLog(
           _titleController.text,
           _descController.text,
-          _selectedCategory, 
+          _selectedCategory,
+          isPublic: _isPublic, 
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Catatan baru berhasil diunggah ke Cloud! ☁️'), backgroundColor: Color.fromARGB(255, 158, 101, 140))
-          );
+          _showSuccessSnackBar('Catatan baru berhasil disimpan! ☁️');
         }
       } else {
+        // --- TASK 5: Update data dengan status isPublic terbaru ---
         final updatedLog = LogModel(
           id: widget.log!.id,
           title: _titleController.text,
@@ -69,12 +77,11 @@ class _LogEditorPageState extends State<LogEditorPage> {
           authorId: widget.log!.authorId, 
           teamId: widget.log!.teamId,
           category: _selectedCategory,
+          isPublic: _isPublic, 
         );
         await widget.controller.updateLog(updatedLog);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Catatan berhasil diperbarui di Cloud! ☁️'), backgroundColor: Color.fromARGB(255, 158, 101, 140))
-          );
+          _showSuccessSnackBar('Catatan berhasil diperbarui! ☁️');
         }
       }
       
@@ -83,10 +90,19 @@ class _LogEditorPageState extends State<LogEditorPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal terhubung ke Cloud!'), backgroundColor: Colors.redAccent)
+          const SnackBar(content: Text('Gagal menyimpan data!'), backgroundColor: Colors.redAccent)
         );
       }
     }
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message), 
+        backgroundColor: const Color.fromARGB(255, 158, 101, 140)
+      )
+    );
   }
 
   @override
@@ -105,7 +121,10 @@ class _LogEditorPageState extends State<LogEditorPage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text(widget.log == null ? "Catatan Baru" : "Edit Catatan", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          title: Text(
+            widget.log == null ? "Catatan Baru" : "Edit Catatan", 
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+          ),
           backgroundColor: primaryPink,
           iconTheme: const IconThemeData(color: Colors.white),
           bottom: const TabBar(
@@ -131,7 +150,6 @@ class _LogEditorPageState extends State<LogEditorPage> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // Judul
                   TextField(
                     controller: _titleController,
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -143,14 +161,16 @@ class _LogEditorPageState extends State<LogEditorPage> {
                   ),
                   const Divider(),
                   
-                  // Dropdown Kategori
                   DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _selectedCategory,
                       isExpanded: true,
                       icon: Icon(Icons.label, color: primaryPink),
                       items: _categories.map((String category) {
-                        return DropdownMenuItem(value: category, child: Text(category, style: TextStyle(color: primaryPink, fontWeight: FontWeight.bold)));
+                        return DropdownMenuItem(
+                          value: category, 
+                          child: Text(category, style: TextStyle(color: primaryPink, fontWeight: FontWeight.bold))
+                        );
                       }).toList(),
                       onChanged: (String? newValue) {
                         setState(() { _selectedCategory = newValue!; });
@@ -159,7 +179,31 @@ class _LogEditorPageState extends State<LogEditorPage> {
                   ),
                   const Divider(),
 
-                  // Area Text Panjang
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      _isPublic ? "Public (Dilihat Tim)" : "Private (Hanya Saya)",
+                      style: TextStyle(
+                        fontSize: 14, 
+                        fontWeight: FontWeight.w600,
+                        color: _isPublic ? Colors.blue : Colors.orange
+                      ),
+                    ),
+                    subtitle: const Text("Catatan private tidak akan muncul di dashboard orang lain."),
+                    secondary: Icon(
+                      _isPublic ? Icons.public : Icons.lock_person_rounded,
+                      color: _isPublic ? Colors.blue : Colors.orange,
+                    ),
+                    value: _isPublic,
+                    onChanged: (bool val) {
+                      setState(() { _isPublic = val; });
+                    },
+                    // Menggunakan properti terbaru agar tidak deprecated
+                    activeThumbColor: primaryPink,
+                    activeTrackColor: primaryPink.withValues(alpha: 0.5),
+                  ),
+                  const Divider(),
+
                   Expanded(
                     child: TextField(
                       controller: _descController,
@@ -167,7 +211,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
                       expands: true,     
                       keyboardType: TextInputType.multiline,
                       decoration: InputDecoration(
-                        hintText: "Tulis laporan dengan format Markdown...\n\nContoh:\n# Ini Heading 1\n**Ini Teks Tebal**\n- Item 1\n- Item 2",
+                        hintText: "Tulis laporan dengan format Markdown...",
                         border: InputBorder.none,
                         hintStyle: TextStyle(color: Colors.grey[400])
                       ),

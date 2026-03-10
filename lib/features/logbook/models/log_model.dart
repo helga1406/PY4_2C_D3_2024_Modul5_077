@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 
-part 'log_model.g.dart'; 
+part 'log_model.g.dart';
 
 @HiveType(typeId: 0)
 class LogModel extends HiveObject {
@@ -24,7 +24,10 @@ class LogModel extends HiveObject {
   final String teamId;
 
   @HiveField(6)
-  final String category; 
+  final String category;
+
+  @HiveField(7)
+  final bool isPublic;
 
   LogModel({
     this.id,
@@ -34,19 +37,21 @@ class LogModel extends HiveObject {
     required this.authorId,
     required this.teamId,
     required this.category,
+    this.isPublic = false,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      '_id': (id == null || id!.contains('temp')) 
-          ? ObjectId() 
+      '_id': (id == null || id!.contains('temp'))
+          ? ObjectId()
           : ObjectId.fromHexString(id!),
       'title': title,
       'description': description,
       'date': date,
       'authorId': authorId,
       'teamId': teamId,
-      'category': category, 
+      'category': category,
+      'isPublic': isPublic,
     };
   }
 
@@ -58,7 +63,8 @@ class LogModel extends HiveObject {
       date: map['date'] ?? '',
       authorId: map['authorId'] ?? 'unknown_user',
       teamId: map['teamId'] ?? 'no_team',
-      category: map['category'] ?? 'Pribadi', 
+      category: map['category'] ?? 'Pribadi',
+      isPublic: map['isPublic'] ?? false,
     );
   }
 }
