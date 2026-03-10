@@ -121,22 +121,22 @@ class LogItemWidget extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min, 
                 children: [
-                  // SEMBUNYIKAN IKON EDIT JIKA TIDAK PUNYA IZIN
                   if (canEdit)
-                    _buildCircularButton(
-                      icon: Icons.edit_rounded,
-                      iconColor: primaryColor,
-                      onTap: onEdit,
-                    ),
-                  if (canEdit) const SizedBox(width: 10), 
+                  _buildCircularButton(
+                    icon: Icons.edit_rounded,
+                    iconColor: primaryColor,
+                    onTap: onEdit,
+                  ),
 
-                  // SEMBUNYIKAN IKON HAPUS JIKA TIDAK PUNYA IZIN
-                  if (canDelete)
-                    _buildCircularButton(
-                      icon: Icons.delete_rounded,
-                      iconColor: Colors.redAccent,
-                      onTap: onDelete,
-                    ),
+                // Jarak 10px HANYA muncul jika kedua tombol mau ditampilkan
+                if (canEdit && canDelete) const SizedBox(width: 10), 
+
+                if (canDelete)
+                  _buildCircularButton(
+                    icon: Icons.delete_rounded,
+                    iconColor: Colors.redAccent,
+                    onTap: onDelete,
+                  ),
                 ],
               ),
             ],
