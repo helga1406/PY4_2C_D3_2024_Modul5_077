@@ -36,15 +36,19 @@ class LogModel extends HiveObject {
     required this.category,
   });
 
-  Map<String, dynamic> toMap() => {
-    '_id': id != null ? ObjectId.fromHexString(id!) : ObjectId(),
-    'title': title,
-    'description': description,
-    'date': date,
-    'authorId': authorId,
-    'teamId': teamId,
-    'category': category, 
-  };
+  Map<String, dynamic> toMap() {
+    return {
+      '_id': (id == null || id!.contains('temp')) 
+          ? ObjectId() 
+          : ObjectId.fromHexString(id!),
+      'title': title,
+      'description': description,
+      'date': date,
+      'authorId': authorId,
+      'teamId': teamId,
+      'category': category, 
+    };
+  }
 
   factory LogModel.fromMap(Map<String, dynamic> map) {
     return LogModel(

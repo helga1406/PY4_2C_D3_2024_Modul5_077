@@ -178,13 +178,19 @@ class _LogEditorPageState extends State<LogEditorPage> {
             ),
             
             // --- TAB 2: PRATINJAU MARKDOWN ---
-            Container(
-              color: const Color(0xFFF9F9F9), 
-              child: Markdown(
-                data: _descController.text.isEmpty ? "*Belum ada teks...*" : _descController.text,
-                styleSheet: MarkdownStyleSheet(
-                  h1: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: MarkdownBody( 
+                data: _descController.text.isEmpty 
+                    ? "_Belum ada teks..._" 
+                    : _descController.text,
+                selectable: true,
+                styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                  h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
                   p: const TextStyle(fontSize: 16, height: 1.5),
+                  listBullet: const TextStyle(fontSize: 16),
+                  strong: const TextStyle(fontWeight: FontWeight.bold),
+                  em: const TextStyle(fontStyle: FontStyle.italic),
                 ),
               ),
             ),

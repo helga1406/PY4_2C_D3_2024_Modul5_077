@@ -47,6 +47,8 @@ class LogItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color primaryColor = const Color.fromARGB(255, 158, 101, 140);
 
+    final bool isTemp = log.id?.contains('temp') ?? true;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -72,6 +74,7 @@ class LogItemWidget extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Kategori
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -88,16 +91,28 @@ class LogItemWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
     
-                    Text(
-                      _formatDateTime(log.date), 
-                      style: const TextStyle(
-                        fontSize: 12, 
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500
-                      ),
+                    // Baris Tanggal + INDIKATOR AWAN (TASK 4)
+                    Row(
+                      children: [
+                        Text(
+                          _formatDateTime(log.date), 
+                          style: const TextStyle(
+                            fontSize: 12, 
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          isTemp ? Icons.cloud_off_rounded : Icons.cloud_done_rounded,
+                          size: 14,
+                          color: isTemp ? Colors.orangeAccent : Colors.blueAccent,
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 8),
+                    // Judul
                     Text(
                       log.title,
                       style: const TextStyle(
@@ -106,6 +121,7 @@ class LogItemWidget extends StatelessWidget {
                           color: Colors.black87),
                     ),
                     const SizedBox(height: 4),
+                    // Deskripsi
                     Text(
                       log.description,
                       maxLines: 2, 
@@ -118,25 +134,25 @@ class LogItemWidget extends StatelessWidget {
                 ),
               ),
               
+              // Tombol Aksi (Edit/Delete)
               Row(
                 mainAxisSize: MainAxisSize.min, 
                 children: [
                   if (canEdit)
-                  _buildCircularButton(
-                    icon: Icons.edit_rounded,
-                    iconColor: primaryColor,
-                    onTap: onEdit,
-                  ),
+                    _buildCircularButton(
+                      icon: Icons.edit_rounded,
+                      iconColor: primaryColor,
+                      onTap: onEdit,
+                    ),
 
-                // Jarak 10px HANYA muncul jika kedua tombol mau ditampilkan
-                if (canEdit && canDelete) const SizedBox(width: 10), 
+                  if (canEdit && canDelete) const SizedBox(width: 10), 
 
-                if (canDelete)
-                  _buildCircularButton(
-                    icon: Icons.delete_rounded,
-                    iconColor: Colors.redAccent,
-                    onTap: onDelete,
-                  ),
+                  if (canDelete)
+                    _buildCircularButton(
+                      icon: Icons.delete_rounded,
+                      iconColor: Colors.redAccent,
+                      onTap: onDelete,
+                    ),
                 ],
               ),
             ],
