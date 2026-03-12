@@ -40,6 +40,28 @@ class LogModel extends HiveObject {
     this.isPublic = false,
   });
 
+  LogModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? date,
+    String? authorId,
+    String? teamId,
+    String? category,
+    bool? isPublic,
+  }) {
+    return LogModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      date: date ?? this.date,
+      authorId: authorId ?? this.authorId,
+      teamId: teamId ?? this.teamId,
+      category: category ?? this.category,
+      isPublic: isPublic ?? this.isPublic,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       '_id': (id == null || id!.contains('temp'))

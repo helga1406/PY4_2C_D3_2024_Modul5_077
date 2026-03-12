@@ -43,7 +43,7 @@ class _LoginViewState extends State<LoginView> {
         MaterialPageRoute(
           builder: (context) => LogView(
             username: user,
-            teamId: user, 
+            teamId: "kelompok_077",
           ),
         ),
       );

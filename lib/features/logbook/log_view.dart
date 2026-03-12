@@ -358,8 +358,24 @@ class _LogViewState extends State<LogView> {
   }
 
   Widget _buildEmptyState() {
-    final bool isFiltering = _controller.searchQuery.value.isNotEmpty || 
-                            _controller.selectedFilter.value != "Semua";
+    final String query = _controller.searchQuery.value;
+    final String filter = _controller.selectedFilter.value;
+
+    final bool hasSearch = query.isNotEmpty;
+    final bool hasFilter = filter != "Semua";
+    final bool isFiltering = hasSearch || hasFilter;
+
+    // --- LOGIKA PESAN DINAMIS ---
+    String emptyMessage;
+    if (hasSearch && hasFilter) {
+      emptyMessage = "Catatan dengan judul '$query' pada kategori '$filter' tidak ditemukan.";
+    } else if (hasSearch) {
+      emptyMessage = "Kami sudah mencari ke mana-mana, tapi judul '$query' tidak ditemukan.";
+    } else if (hasFilter) {
+      emptyMessage = "Belum ada catatan untuk kategori '$filter' nih.";
+    } else {
+      emptyMessage = "Buku catatanmu masih bersih banget nih! Yuk, isi dengan ide dan progres proyek hebatmu hari ini.";
+    }
 
     return Center(
       child: SingleChildScrollView(
@@ -392,9 +408,7 @@ class _LogViewState extends State<LogView> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
-                      isFiltering
-                          ? "Kami sudah mencari ke mana-mana, tapi judul '${_controller.searchQuery.value}' tidak ditemukan."
-                          : "Buku catatanmu masih bersih banget nih! Yuk, isi dengan ide dan progres proyek hebatmu hari ini.",
+                      emptyMessage, 
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.grey[600],

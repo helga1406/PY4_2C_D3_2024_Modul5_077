@@ -35,6 +35,11 @@ class LogController {
     });
   }
 
+  void _refreshUI() {
+    final localData = _myBox.values.where((log) => log.teamId == teamId).toList();
+    logsNotifier.value = _applyPrivacyFilter(localData);
+  }
+
   // --- FILTER PRIVASI ---
   List<LogModel> _applyPrivacyFilter(List<LogModel> allLogs) {
     return allLogs.where((log) {
@@ -46,39 +51,47 @@ class LogController {
     }).toList();
   }
 
-  // --- SINKRONISASI DATA ---
+  // --- SINKRONISASI DATA (BACKGROUND) ---
   Future<void> _syncPendingData() async {
-    await LogHelper.writeLog(
-      "INTERNET AKTIF: Memulai sinkronisasi...", 
-      level: 2,
-    );
+    await LogHelper.writeLog("INTERNET AKTIF: Memulai sinkronisasi...", level: 2);
 
-    final localLogs = _myBox.values.toList();
-    for (var log in localLogs) {
+    final pendingLogs = _myBox.values.where((l) => l.id != null && l.id!.contains('temp-')).toList();
+    
+    for (var tempLog in pendingLogs) {
       try {
-        bool isOwner = log.authorId.trim().toLowerCase() == 
-            username.trim().toLowerCase();
+        bool isOwner = tempLog.authorId.trim().toLowerCase() == username.trim().toLowerCase();
+        
         if (isOwner) {
-          await MongoService().insertLog(log, username);
+          final realId = tempLog.id!.replaceAll('temp-', '');
+          final cloudLog = tempLog.copyWith(id: realId);
+
+          await MongoService().insertLog(cloudLog, username);
+          await _myBox.delete(tempLog.id);
+          await _myBox.put(cloudLog.id, cloudLog);
         }
       } catch (e) {
-        await LogHelper.writeLog(
-          "ERROR: Sinkronisasi gagal log ${log.id}", 
-          level: 1,
-        );
+        await LogHelper.writeLog("ERROR: Sinkronisasi gagal log ${tempLog.id}", level: 1);
       }
     }
+    _refreshUI(); 
   }
 
-  void searchLog(String query) => searchQuery.value = query;
-  void setFilterCategory(String category) => selectedFilter.value = category;
+  void searchLog(String query) {
+    searchQuery.value = query;
+    _refreshUI();
+  }
+
+  void setFilterCategory(String category) {
+    selectedFilter.value = category;
+    _refreshUI();
+  }
 
   // --- FUNGSI LOAD LOGS ---
   Future<void> loadLogs(String teamId) async {
-    final localData = _myBox.values.where((log) => log.teamId == teamId).toList();
-    logsNotifier.value = _applyPrivacyFilter(localData);
+    _refreshUI(); 
 
     try {
+      await _syncPendingData(); 
       final cloudData = await MongoService().getLogs(teamId);
 
       for (var item in cloudData) {
@@ -91,15 +104,12 @@ class LogController {
           }
         }
       }
-
-      logsNotifier.value = _applyPrivacyFilter(cloudData);
+      
+      _refreshUI(); 
       await LogHelper.writeLog("SYNC: Data sinkron dengan Cloud", level: 2);
       
     } catch (e) {
-      await LogHelper.writeLog(
-        "OFFLINE MODE: Menampilkan data lokal (Error: $e)", 
-        level: 2,
-      );
+      await LogHelper.writeLog("OFFLINE MODE: Menampilkan data lokal (Error: $e)", level: 2);
     }
   }
 
@@ -111,18 +121,16 @@ class LogController {
       required bool isPublic,
     }) async {
       // Validasi RBAC
-      if (!AccessControlService.canPerform(
-        userRole, 
-        AccessControlService.actionCreate,
-      )) {
+      if (!AccessControlService.canPerform(userRole, AccessControlService.actionCreate)) {
         await LogHelper.writeLog("SECURITY BREACH: Unauthorized create", level: 1);
         return;
       }
 
       final String formattedTime = DateTime.now().toString().substring(0, 16);
+      final String realId = mongo.ObjectId().oid; 
       
-      final newLog = LogModel(
-        id: mongo.ObjectId().oid,
+      final newLogTemp = LogModel(
+        id: "temp-$realId", 
         title: title,
         description: desc,
         date: formattedTime,
@@ -132,13 +140,15 @@ class LogController {
         isPublic: isPublic,
       );
 
-      // Simpan ke Hive (Offline Persistence)
-      await _myBox.put(newLog.id, newLog);
-      logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
+      await _myBox.put(newLogTemp.id, newLogTemp);
+      _refreshUI();
 
-      // Simpan ke MongoDB Atlas (Cloud Sync)
       try {
-        await MongoService().insertLog(newLog, username);
+        final cloudLog = newLogTemp.copyWith(id: realId); 
+        await MongoService().insertLog(cloudLog, username);
+        await _myBox.delete(newLogTemp.id);
+        await _myBox.put(cloudLog.id, cloudLog);
+        _refreshUI();
       } catch (e) {
         await LogHelper.writeLog("WARNING: Data tersimpan lokal (Offline)", level: 1);
       }
@@ -151,60 +161,41 @@ class LogController {
             updatedLog.authorId.trim().toLowerCase()) ==
         username.trim().toLowerCase();
 
-    if (!AccessControlService.canPerform(
-      userRole,
-      AccessControlService.actionUpdate,
-      isOwner: isOwner,
-    )) {
-      await LogHelper.writeLog(
-        "SECURITY BREACH: Unauthorized update", 
-        level: 1,
-      );
+    if (!AccessControlService.canPerform(userRole, AccessControlService.actionUpdate, isOwner: isOwner)) {
+      await LogHelper.writeLog("SECURITY BREACH: Unauthorized update", level: 1);
       return;
     }
 
     await _myBox.put(updatedLog.id, updatedLog);
-    logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
+    _refreshUI();
 
     try {
       await MongoService().updateLog(updatedLog, username);
     } catch (e) {
-      await LogHelper.writeLog(
-        "WARNING: Update tersimpan lokal", 
-        level: 1,
-      );
+      await LogHelper.writeLog("WARNING: Update tersimpan lokal", level: 1);
     }
   }
 
   // --- FUNGSI REMOVE LOG ---
   Future<void> removeLog(LogModel log) async {
-    bool isOwner = log.authorId.trim().toLowerCase() == 
-        username.trim().toLowerCase();
+    bool isOwner = log.authorId.trim().toLowerCase() == username.trim().toLowerCase();
 
-    if (!AccessControlService.canPerform(
-      userRole,
-      AccessControlService.actionDelete,
-      isOwner: isOwner,
-    )) {
-      await LogHelper.writeLog(
-        "SECURITY BREACH: Unauthorized delete", 
-        level: 1,
-      );
+    if (!AccessControlService.canPerform(userRole, AccessControlService.actionDelete, isOwner: isOwner)) {
+      await LogHelper.writeLog("SECURITY BREACH: Unauthorized delete", level: 1);
       return;
     }
 
     if (log.id != null) {
       await _myBox.delete(log.id);
-      logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
+      _refreshUI();
 
       try {
-        final objectId = mongo.ObjectId.fromHexString(log.id!);
-        await MongoService().deleteLog(objectId, username);
+        if (!log.id!.contains('temp-')) {
+          final objectId = mongo.ObjectId.fromHexString(log.id!);
+          await MongoService().deleteLog(objectId, username);
+        }
       } catch (e) {
-        await LogHelper.writeLog(
-          "WARNING: Gagal hapus di Cloud", 
-          level: 1,
-        );
+        await LogHelper.writeLog("WARNING: Gagal hapus di Cloud", level: 1);
       }
     }
   }
