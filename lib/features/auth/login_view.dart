@@ -23,7 +23,6 @@ class _LoginViewState extends State<LoginView> {
     if (user.isEmpty || pass.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-
           backgroundColor: Color.fromARGB(255, 158, 101, 140), 
           content: Text(
             "Username dan Password tidak boleh kosong!",
@@ -41,14 +40,19 @@ class _LoginViewState extends State<LoginView> {
     if (isSuccess) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LogView(username: user)),
+        MaterialPageRoute(
+          builder: (context) => LogView(
+            username: user,
+            teamId: user, 
+          ),
+        ),
       );
     } else {
       int sisa = 3 - _controller.attempts;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: const Color.fromARGB(255,158,101,140,), 
+          backgroundColor: const Color.fromARGB(255, 158, 101, 140), 
           content: Text(
             "Login Gagal! Sisa percobaan: ${sisa > 0 ? sisa : 0}",
             style: const TextStyle(
@@ -56,8 +60,7 @@ class _LoginViewState extends State<LoginView> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          behavior:
-              SnackBarBehavior.floating, 
+          behavior: SnackBarBehavior.floating, 
           duration: const Duration(seconds: 2), 
         ),
       );
@@ -133,7 +136,7 @@ class _LoginViewState extends State<LoginView> {
               ),
               const SizedBox(height: 20),
 
-              // --- INPUT PASSWORD DENGAN IKON ---
+              // --- INPUT PASSWORD DENGAN IKON & TOGGLE VISIBILITY ---
               TextField(
                 controller: _passController,
                 obscureText: _isObscure,

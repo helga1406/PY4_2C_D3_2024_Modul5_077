@@ -54,7 +54,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
     });
   }
 
-  void _save() async {
+void _save() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -67,6 +67,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
 
     try {
       if (widget.log == null) {
+        // UNTUK CATATAN BARU
         await widget.controller.addLog(
           _titleController.text,
           _descController.text,
@@ -83,11 +84,13 @@ class _LogEditorPageState extends State<LogEditorPage> {
           description: _descController.text,
           date: widget.log!.date, 
           authorId: widget.log!.authorId, 
-          teamId: widget.log!.teamId,
+          teamId: widget.controller.teamId, 
           category: _selectedCategory,
           isPublic: _isPublic, 
         );
+        
         await widget.controller.updateLog(updatedLog);
+        
         if (mounted) {
           _showSuccessSnackBar('Catatan berhasil diperbarui! ☁️');
         }
@@ -153,6 +156,7 @@ class _LogEditorPageState extends State<LogEditorPage> {
         ),
         body: TabBarView(
           children: [
+            
             // --- TAB 1: AREA EDITOR ---
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -229,19 +233,21 @@ class _LogEditorPageState extends State<LogEditorPage> {
             ),
             
             // --- TAB 2: PRATINJAU MARKDOWN ---
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: MarkdownBody( 
-                data: _descController.text.isEmpty 
-                    ? "_Belum ada teks..._" 
-                    : _descController.text,
-                selectable: true,
-                styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                  h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-                  p: const TextStyle(fontSize: 16, height: 1.5),
-                  listBullet: const TextStyle(fontSize: 16),
-                  strong: const TextStyle(fontWeight: FontWeight.bold),
-                  em: const TextStyle(fontStyle: FontStyle.italic),
+            SingleChildScrollView( 
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: MarkdownBody( 
+                  data: _descController.text.isEmpty 
+                      ? "_Belum ada teks..._" 
+                      : _descController.text,
+                  selectable: true,
+                  styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                    h1: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                    p: const TextStyle(fontSize: 16, height: 1.5),
+                    listBullet: const TextStyle(fontSize: 16),
+                    strong: const TextStyle(fontWeight: FontWeight.bold),
+                    em: const TextStyle(fontStyle: FontStyle.italic),
+                  ),
                 ),
               ),
             ),

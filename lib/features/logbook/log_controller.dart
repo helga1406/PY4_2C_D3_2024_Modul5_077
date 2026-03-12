@@ -15,11 +15,13 @@ class LogController {
 
   final String username;
   final String userRole;
+  final String teamId; 
 
   late final Box<LogModel> _myBox;
 
   LogController({
     required this.username,
+    required this.teamId, 
     this.userRole = 'Anggota',
   }) {
     _myBox = Hive.box<LogModel>('offline_logs');
@@ -73,32 +75,27 @@ class LogController {
 
   // --- FUNGSI LOAD LOGS ---
   Future<void> loadLogs(String teamId) async {
-    logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
+    final localData = _myBox.values.where((log) => log.teamId == teamId).toList();
+    logsNotifier.value = _applyPrivacyFilter(localData);
 
     try {
       final cloudData = await MongoService().getLogs(teamId);
 
       for (var item in cloudData) {
         if (item.id != null) {
-          bool isMyOwn = item.authorId.trim().toLowerCase() == 
-              username.trim().toLowerCase();
+          bool isMyOwn = item.authorId.trim().toLowerCase() == username.trim().toLowerCase();
           bool isPublic = (item.isPublic ?? false) == true;
 
           if (isMyOwn || isPublic) {
-            await _myBox.put(item.id, item);
-          } else {
-            if (_myBox.containsKey(item.id)) {
-              await _myBox.delete(item.id);
-            }
+            await _myBox.put(item.id, item); 
           }
         }
       }
 
       logsNotifier.value = _applyPrivacyFilter(cloudData);
       await LogHelper.writeLog("SYNC: Data sinkron dengan Cloud", level: 2);
+      
     } catch (e) {
-      logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
-
       await LogHelper.writeLog(
         "OFFLINE MODE: Menampilkan data lokal (Error: $e)", 
         level: 2,
@@ -108,46 +105,44 @@ class LogController {
 
   // --- FUNGSI ADD LOG ---
   Future<void> addLog(
-    String title, 
-    String desc, 
-    String category, {
-    required bool isPublic,
-  }) async {
-    if (!AccessControlService.canPerform(
-      userRole, 
-      AccessControlService.actionCreate,
-    )) {
-      await LogHelper.writeLog(
-        "SECURITY BREACH: Unauthorized create", 
-        level: 1,
+      String title, 
+      String desc, 
+      String category, {
+      required bool isPublic,
+    }) async {
+      // Validasi RBAC
+      if (!AccessControlService.canPerform(
+        userRole, 
+        AccessControlService.actionCreate,
+      )) {
+        await LogHelper.writeLog("SECURITY BREACH: Unauthorized create", level: 1);
+        return;
+      }
+
+      final String formattedTime = DateTime.now().toString().substring(0, 16);
+      
+      final newLog = LogModel(
+        id: mongo.ObjectId().oid,
+        title: title,
+        description: desc,
+        date: formattedTime,
+        authorId: username.trim().toLowerCase(),
+        teamId: teamId,
+        category: category,
+        isPublic: isPublic,
       );
-      return;
+
+      // Simpan ke Hive (Offline Persistence)
+      await _myBox.put(newLog.id, newLog);
+      logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
+
+      // Simpan ke MongoDB Atlas (Cloud Sync)
+      try {
+        await MongoService().insertLog(newLog, username);
+      } catch (e) {
+        await LogHelper.writeLog("WARNING: Data tersimpan lokal (Offline)", level: 1);
+      }
     }
-
-    final String formattedTime = DateTime.now().toString().substring(0, 16);
-    final newLog = LogModel(
-      id: mongo.ObjectId().oid,
-      title: title,
-      description: desc,
-      date: formattedTime,
-      authorId: username.trim().toLowerCase(),
-      teamId: 'team_01',
-      category: category,
-      isPublic: isPublic,
-    );
-
-    await _myBox.put(newLog.id, newLog);
-    logsNotifier.value = _applyPrivacyFilter(_myBox.values.toList());
-
-    try {
-      await MongoService().insertLog(newLog, username);
-    } catch (e) {
-      await LogHelper.writeLog(
-        "WARNING: Data tersimpan lokal (Offline)", 
-        level: 1,
-      );
-    }
-  }
 
   // --- FUNGSI UPDATE LOG ---
   Future<void> updateLog(LogModel updatedLog) async {

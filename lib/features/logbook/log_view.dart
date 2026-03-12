@@ -9,8 +9,13 @@ import 'package:logbook_app_077/features/logbook/log_editor_page.dart';
 
 class LogView extends StatefulWidget {
   final String username;
+  final String teamId; 
 
-  const LogView({super.key, required this.username});
+  const LogView({
+    super.key, 
+    required this.username, 
+    required this.teamId, 
+  });
 
   @override
   State<LogView> createState() => _LogViewState();
@@ -23,22 +28,23 @@ class _LogViewState extends State<LogView> {
   // Role Gatekeeper
   String currentUserRole = 'Anggota';
 
-  @override
+@override
   void initState() {
     super.initState();
 
     _controller = LogController(
       username: widget.username,
+      teamId: widget.teamId, 
       userRole: currentUserRole,
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.loadLogs('team_01');
+      _controller.loadLogs(widget.teamId);
     });
   }
 
   Future<void> _refreshData() async {
-    await _controller.loadLogs('team_01');
+    await _controller.loadLogs(widget.teamId);
   }
 
   // NAVIGASI KE HALAMAN EDITOR
@@ -382,8 +388,7 @@ class _LogViewState extends State<LogView> {
                   ),
 
                   const SizedBox(height: 12),
-
-                  // TEKS INSTRUKSI
+  
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
@@ -415,7 +420,7 @@ class _LogViewState extends State<LogView> {
                   ],
                 ],
               ),
-            ), // Akhir dari Transform.translate
+            ), 
           ],
         ),
       ),
