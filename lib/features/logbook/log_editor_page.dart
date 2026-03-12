@@ -21,8 +21,15 @@ class _LogEditorPageState extends State<LogEditorPage> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   
-  String _selectedCategory = "Pribadi";
-  final List<String> _categories = ["Pribadi", "Pekerjaan", "Urgent"];
+  String _selectedCategory = "Mechanical"; 
+  final List<String> _categories = [
+    "Pribadi", 
+    "Pekerjaan", 
+    "Urgent", 
+    "Mechanical", 
+    "Electronic", 
+    "Software"
+  ];
 
   bool _isPublic = false; 
 
@@ -33,7 +40,12 @@ class _LogEditorPageState extends State<LogEditorPage> {
     _descController = TextEditingController(text: widget.log?.description ?? '');
     
     if (widget.log != null) {
-      _selectedCategory = widget.log!.category;
+      if (_categories.contains(widget.log!.category)) {
+        _selectedCategory = widget.log!.category;
+      } else {
+        _selectedCategory = "Mechanical"; 
+      }
+      
       _isPublic = widget.log?.isPublic ?? false; 
     }
 
@@ -194,7 +206,6 @@ class _LogEditorPageState extends State<LogEditorPage> {
                     onChanged: (bool val) {
                       setState(() { _isPublic = val; });
                     },
-                    // Menggunakan properti terbaru agar tidak deprecated
                     activeThumbColor: primaryPink,
                     activeTrackColor: primaryPink.withValues(alpha: 0.5),
                   ),

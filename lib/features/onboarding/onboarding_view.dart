@@ -1,3 +1,4 @@
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:logbook_app_077/features/auth/login_view.dart';
 
@@ -10,9 +11,9 @@ class OnboardingView extends StatefulWidget {
 
 class _OnboardingViewState extends State<OnboardingView> {
   final PageController _pageController = PageController();
+  Timer? _timer; 
   int step = 1;
 
-  // 1. Data Onboarding 
   final List<Map<String, String>> onboardingData = [
     {
       "image": "assets/images/onboarding_1.jpeg",
@@ -31,11 +32,41 @@ class _OnboardingViewState extends State<OnboardingView> {
     },
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+      if (step < onboardingData.length) {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _nextStep() {
     setState(() {
       if (step < 3) {
-        step++;
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
       } else {
+        _timer?.cancel(); 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginView()),
@@ -67,8 +98,6 @@ class _OnboardingViewState extends State<OnboardingView> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-
-                      // 2. Gambar sesuai Step
                       Image.asset(
                         onboardingData[index]["image"]!,
                         height: 250,
@@ -101,11 +130,12 @@ class _OnboardingViewState extends State<OnboardingView> {
               height: 10,
             ),
 
-            // 3. Titik-titik posisi halaman
+          // Indicator Step
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(3, (index) {
-                return Container(
+                return AnimatedContainer( 
+                  duration: const Duration(milliseconds: 300),
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   width: step == (index + 1) ? 20 : 10,
                   height: 10,
@@ -121,7 +151,7 @@ class _OnboardingViewState extends State<OnboardingView> {
 
             const SizedBox(
               height: 40,
-            ), 
+            ),
 
             ElevatedButton(
               onPressed: _nextStep,

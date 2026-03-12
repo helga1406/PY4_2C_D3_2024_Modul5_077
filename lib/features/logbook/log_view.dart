@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:logbook_app_077/features/logbook/log_controller.dart';
 import 'package:logbook_app_077/features/logbook/models/log_model.dart';
 import 'package:logbook_app_077/features/widgets/log_item_widget.dart';
@@ -25,9 +26,12 @@ class _LogViewState extends State<LogView> {
   @override
   void initState() {
     super.initState();
-    
-    _controller = LogController(username: widget.username, userRole: currentUserRole);
-    
+
+    _controller = LogController(
+      username: widget.username,
+      userRole: currentUserRole,
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller.loadLogs('team_01');
     });
@@ -42,10 +46,7 @@ class _LogViewState extends State<LogView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LogEditorPage(
-          log: log,
-          controller: _controller,
-        ),
+        builder: (context) => LogEditorPage(log: log, controller: _controller),
       ),
     );
 
@@ -67,8 +68,10 @@ class _LogViewState extends State<LogView> {
       appBar: AppBar(
         title: Text(
           "Logbook: ${widget.username} ($currentUserRole)",
-          style:
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         elevation: 0,
         backgroundColor: _primaryPink,
@@ -80,8 +83,8 @@ class _LogViewState extends State<LogView> {
               title: "Konfirmasi Logout",
               content: "Apakah Anda yakin ingin keluar?",
               onConfirm: () async {
-                await _controller.clearLocalData(); 
-                
+                await _controller.clearLocalData();
+
                 if (!context.mounted) return;
                 Navigator.of(context).pushReplacementNamed('/');
               },
@@ -104,8 +107,7 @@ class _LogViewState extends State<LogView> {
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.7,
+                        height: MediaQuery.of(context).size.height * 0.7,
                         child: _buildEmptyState(),
                       ),
                     ),
@@ -144,8 +146,7 @@ class _LogViewState extends State<LogView> {
 
     try {
       DateTime dt = DateTime.parse(log.date);
-      formattedDate =
-          DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(dt);
+      formattedDate = DateFormat('dd MMMM yyyy, HH:mm', 'id_ID').format(dt);
     } catch (e) {
       formattedDate = log.date;
     }
@@ -154,8 +155,7 @@ class _LogViewState extends State<LogView> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           log.title,
           textAlign: TextAlign.center,
@@ -167,8 +167,10 @@ class _LogViewState extends State<LogView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: _primaryPink.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -185,14 +187,12 @@ class _LogViewState extends State<LogView> {
               const SizedBox(height: 15),
               Text(
                 log.description,
-                style:
-                    const TextStyle(fontSize: 16, color: Colors.black87),
+                style: const TextStyle(fontSize: 16, color: Colors.black87),
               ),
               const Divider(height: 30),
               Text(
                 "Dibuat pada: $formattedDate\nAuthor: ${log.authorId}",
-                style:
-                    const TextStyle(fontSize: 12, color: Colors.grey),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -203,7 +203,9 @@ class _LogViewState extends State<LogView> {
             child: Text(
               "TUTUP",
               style: TextStyle(
-                  color: _primaryPink, fontWeight: FontWeight.bold),
+                color: _primaryPink,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -218,24 +220,27 @@ class _LogViewState extends State<LogView> {
   }) async {
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+      builder: (dialogContext) => AlertDialog(
+
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Text(content),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text("Batal", style: TextStyle(color: _primaryPink)),
           ),
           ElevatedButton(
-            onPressed: onConfirm,
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              onConfirm();
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: _primaryPink,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30)),
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
             child: const Text("Ya"),
           ),
@@ -261,13 +266,13 @@ class _LogViewState extends State<LogView> {
                 contentPadding: EdgeInsets.zero,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
-                  borderSide:
-                      BorderSide(color: _primaryPink.withValues(alpha: 0.1)),
+                  borderSide: BorderSide(
+                    color: _primaryPink.withValues(alpha: 0.1),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
-                  borderSide:
-                      BorderSide(color: _primaryPink, width: 2),
+                  borderSide: BorderSide(color: _primaryPink, width: 2),
                 ),
               ),
             ),
@@ -284,8 +289,7 @@ class _LogViewState extends State<LogView> {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(
-            color: _primaryPink.withValues(alpha: 0.1)),
+        border: Border.all(color: _primaryPink.withValues(alpha: 0.1)),
         borderRadius: BorderRadius.circular(25),
       ),
       child: DropdownButtonHideUnderline(
@@ -294,18 +298,28 @@ class _LogViewState extends State<LogView> {
           builder: (context, currentFilter, _) {
             return DropdownButton<String>(
               value: currentFilter,
-              icon:
-                  Icon(Icons.filter_list_rounded, color: _primaryPink),
+              icon: Icon(Icons.filter_list_rounded, color: _primaryPink),
               style: TextStyle(
-                  color: _primaryPink, fontWeight: FontWeight.bold),
-              items: ["Semua", "Pribadi", "Pekerjaan", "Urgent"]
-                  .map((cat) =>
-                      DropdownMenuItem(value: cat, child: Text(cat)))
-                  .toList(),
+                color: _primaryPink,
+                fontWeight: FontWeight.bold,
+              ),
+              items:
+                  [
+                        "Semua",
+                        "Pribadi",
+                        "Pekerjaan",
+                        "Urgent",
+                        "Mechanical",
+                        "Electronic",
+                        "Software",
+                      ]
+                      .map(
+                        (cat) => DropdownMenuItem(value: cat, child: Text(cat)),
+                      )
+                      .toList(),
               onChanged: (val) {
                 if (val != null) {
-                  setState(
-                      () => _controller.setFilterCategory(val));
+                  setState(() => _controller.setFilterCategory(val));
                 }
               },
             );
@@ -319,47 +333,92 @@ class _LogViewState extends State<LogView> {
     final search = _controller.searchQuery.value.toLowerCase();
     final filter = _controller.selectedFilter.value;
 
+    final currentUsername = widget.username.trim().toLowerCase();
+
     return logs.where((log) {
+      final bool isOwner = log.authorId.trim().toLowerCase() == currentUsername;
+
+      final bool isVisible = isOwner || (log.isPublic ?? false);
+      if (!isVisible) return false;
+
       final matchesSearch =
-          log.title.toLowerCase().contains(search);
-      final matchesCat =
-          filter == "Semua" || log.category == filter;
+          log.title.toLowerCase().contains(search) ||
+          log.description.toLowerCase().contains(search);
+
+      final matchesCat = filter == "Semua" || log.category == filter;
+
       return matchesSearch && matchesCat;
     }).toList();
   }
 
   Widget _buildEmptyState() {
-    final bool isFiltering =
-        _controller.searchQuery.value.isNotEmpty ||
-            _controller.selectedFilter.value != "Semua";
+    final bool isFiltering = _controller.searchQuery.value.isNotEmpty || 
+                            _controller.selectedFilter.value != "Semua";
 
-    return Column(
-      children: [
-        const Spacer(flex: 2),
-        Icon(Icons.cloud_queue_rounded,
-            size: 100,
-            color: _primaryPink.withValues(alpha: 0.1)),
-        const SizedBox(height: 20),
-        Text(
-          isFiltering ? "Tidak Ditemukan" : "Logbook Kosong",
-          style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: _primaryPink),
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              isFiltering 
+                  ? 'assets/lottie/search_not_found.json' 
+                  : 'assets/lottie/empty_log.json',       
+              height: 200, 
+              repeat: true,
+            ),
+      
+            Transform.translate(
+              offset: const Offset(0, -40), 
+              child: Column(
+                children: [
+                  Text(
+                    isFiltering ? "Hasil Tidak Ditemukan" : "Logbook Masih Kosong",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: _primaryPink,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // TEKS INSTRUKSI
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      isFiltering
+                          ? "Kami sudah mencari ke mana-mana, tapi judul '${_controller.searchQuery.value}' tidak ditemukan."
+                          : "Buku catatanmu masih bersih banget nih! Yuk, isi dengan ide dan progres proyek hebatmu hari ini.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 15,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  
+                  // TOMBOL BUAT CATATAN
+                  if (!isFiltering) ...[
+                    const SizedBox(height: 25),
+                    ElevatedButton.icon(
+                      onPressed: () => _goToEditor(),
+                      icon: const Icon(Icons.add),
+                      label: const Text("Buat Catatan Pertama"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _primaryPink,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ), // Akhir dari Transform.translate
+          ],
         ),
-        Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-          child: Text(
-            isFiltering
-                ? "Catatan tidak ditemukan."
-                : "Belum ada catatan. Ketuk + untuk menambah.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ),
-        const Spacer(flex: 3),
-      ],
+      ),
     );
   }
 
@@ -372,22 +431,15 @@ class _LogViewState extends State<LogView> {
         itemBuilder: (context, index) {
           final log = filtered[index];
 
-          final bool isOwner = log.authorId.trim().toLowerCase() == widget.username.trim().toLowerCase();
+          final bool isOwner =
+              log.authorId.trim().toLowerCase() ==
+              widget.username.trim().toLowerCase();
 
-          final bool canDelete = AccessControlService.canPerform(
-            currentUserRole,
-            AccessControlService.actionDelete,
-            isOwner: isOwner,
-          );
-
-          final bool canEdit = AccessControlService.canPerform(
-            currentUserRole,
-            AccessControlService.actionUpdate,
-            isOwner: isOwner,
-          );
+          final bool canDelete = isOwner;
+          final bool canEdit = isOwner;
 
           return Dismissible(
-            key: Key(log.id ?? log.date + log.title),
+            key: Key(log.id ?? "${log.date}${log.title}"),
             direction: canDelete
                 ? DismissDirection.endToStart
                 : DismissDirection.none,
@@ -399,7 +451,6 @@ class _LogViewState extends State<LogView> {
                 content: "Yakin ingin menghapus ini?",
                 onConfirm: () {
                   delete = true;
-                  Navigator.pop(context);
                 },
               );
 
@@ -411,11 +462,13 @@ class _LogViewState extends State<LogView> {
             },
             background: Container(
               alignment: Alignment.centerRight,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               color: Colors.redAccent,
-              child: const Icon(Icons.delete_forever,
-                  color: Colors.white, size: 30),
+              child: const Icon(
+                Icons.delete_forever,
+                color: Colors.white,
+                size: 30,
+              ),
             ),
             child: LogItemWidget(
               log: log,
@@ -428,10 +481,6 @@ class _LogViewState extends State<LogView> {
                 content: "Hapus catatan ini?",
                 onConfirm: () async {
                   await _controller.removeLog(log);
-
-                  if (!context.mounted) return;
-
-                  Navigator.pop(context);
                   _showSnackBar("Berhasil dihapus.");
                 },
               ),

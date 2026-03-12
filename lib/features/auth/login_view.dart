@@ -23,7 +23,14 @@ class _LoginViewState extends State<LoginView> {
     if (user.isEmpty || pass.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Username dan Password tidak boleh kosong!"),
+
+          backgroundColor: Color.fromARGB(255, 158, 101, 140), 
+          content: Text(
+            "Username dan Password tidak boleh kosong!",
+            style: TextStyle(fontWeight: FontWeight.bold), 
+          ),
+          behavior: SnackBarBehavior.floating, 
+          duration: Duration(seconds: 2),
         ),
       );
       return;
